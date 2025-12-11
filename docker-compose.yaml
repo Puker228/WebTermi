@@ -9,3 +9,5 @@ services:
       dockerfile: Dockerfile
     networks:
       - webtermi_network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 
-	"github.com/moby/moby/api/pkg/stdcopy"
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"
 )
@@ -18,16 +17,21 @@ func main() {
 	}
 	defer apiClient.Close()
 
-	reader, err := apiClient.ImagePull(ctx, "docker.io/library/alpine", client.ImagePullOptions{})
+	reader, err := apiClient.ImagePull(ctx, "ubuntu:24.04", client.ImagePullOptions{})
 	if err != nil {
 		panic(err)
 	}
 	io.Copy(os.Stdout, reader)
 
 	resp, err := apiClient.ContainerCreate(ctx, client.ContainerCreateOptions{
-		Image: "alpine",
+		Image: "ubuntu:24.04",
 		Config: &container.Config{
-			Cmd: []string{"echo", "hello world"},
+			Cmd:          []string{"/bin/bash"},
+			AttachStdin:  true,
+			AttachStdout: true,
+			AttachStderr: true,
+			Tty:          true,
+			OpenStdin:    true,
 		},
 	})
 	if err != nil {
@@ -38,19 +42,16 @@ func main() {
 		panic(err)
 	}
 
-	wait := apiClient.ContainerWait(ctx, resp.ID, client.ContainerWaitOptions{})
-	select {
-	case err := <-wait.Error:
-		if err != nil {
-			panic(err)
-		}
-	case <-wait.Result:
-	}
-
-	out, err := apiClient.ContainerLogs(ctx, resp.ID, client.ContainerLogsOptions{ShowStdout: true})
+	conn, err := apiClient.ContainerAttach(ctx, resp.ID, client.ContainerAttachOptions{
+		Stream: true,
+		Stdin:  true,
+		Stdout: true,
+		Stderr: true,
+	})
 	if err != nil {
 		panic(err)
 	}
 
-	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
+	go io.Copy(os.Stdout, conn.Reader)
+	io.Copy(conn.Conn, os.Stdin)
 }
