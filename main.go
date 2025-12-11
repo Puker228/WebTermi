@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 
@@ -10,6 +11,12 @@ import (
 )
 
 func main() {
+	for i := range 10 {
+		deployContainer(fmt.Sprintf("test-%v", i))
+	}
+}
+
+func deployContainer(containerName string) {
 	ctx := context.Background()
 	apiClient, err := client.New(client.FromEnv)
 	if err != nil {
@@ -17,13 +24,16 @@ func main() {
 	}
 	defer apiClient.Close()
 
+	// подтягивание образа
 	reader, err := apiClient.ImagePull(ctx, "ubuntu:24.04", client.ImagePullOptions{})
 	if err != nil {
 		panic(err)
 	}
 	io.Copy(os.Stdout, reader)
 
+	// создание контейнера
 	resp, err := apiClient.ContainerCreate(ctx, client.ContainerCreateOptions{
+		Name:  containerName,
 		Image: "ubuntu:24.04",
 		Config: &container.Config{
 			Cmd:          []string{"/bin/bash"},
@@ -38,10 +48,12 @@ func main() {
 		panic(err)
 	}
 
+	// запуск контейнера
 	if _, err := apiClient.ContainerStart(ctx, resp.ID, client.ContainerStartOptions{}); err != nil {
 		panic(err)
 	}
 
+	// привязка терминала к контейнеру
 	conn, err := apiClient.ContainerAttach(ctx, resp.ID, client.ContainerAttachOptions{
 		Stream: true,
 		Stdin:  true,
@@ -53,5 +65,7 @@ func main() {
 	}
 
 	go io.Copy(os.Stdout, conn.Reader)
-	io.Copy(conn.Conn, os.Stdin)
+
+	// TODO убрать go после тестов
+	go io.Copy(conn.Conn, os.Stdin)
 }
