@@ -21,6 +21,8 @@ func deployContainer(containerName string) {
 	}
 	defer apiClient.Close()
 
+	containerExist(containerName, ctx, apiClient)
+
 	// подтягивание образа
 	reader, err := apiClient.ImagePull(ctx, "ubuntu:24.04", client.ImagePullOptions{})
 	if err != nil {
@@ -66,4 +68,25 @@ func deployContainer(containerName string) {
 
 	// ввод
 	io.Copy(conn.Conn, os.Stdin)
+}
+
+func containerExist(containerName string, ctx context.Context, apiClient *client.Client) bool {
+	cont_list, err := apiClient.ContainerList(ctx, client.ContainerListOptions{
+		All: true,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	cont_check := "/" + containerName
+
+	for _, cont := range cont_list.Items {
+		for _, name := range cont.Names {
+			if cont_check == name {
+				return true
+			}
+		}
+	}
+
+	return false
 }
