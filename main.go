@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"slices"
 
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"
@@ -21,7 +22,9 @@ func deployContainer(containerName string) {
 	}
 	defer apiClient.Close()
 
-	containerExist(containerName, ctx, apiClient)
+	if contCheckRes := containerExist(containerName, ctx, apiClient); contCheckRes.Exist {
+		removeContainer()
+	}
 
 	// подтягивание образа
 	reader, err := apiClient.ImagePull(ctx, "ubuntu:24.04", client.ImagePullOptions{})
@@ -70,8 +73,8 @@ func deployContainer(containerName string) {
 	io.Copy(conn.Conn, os.Stdin)
 }
 
-func containerExist(containerName string, ctx context.Context, apiClient *client.Client) bool {
-	cont_list, err := apiClient.ContainerList(ctx, client.ContainerListOptions{
+func containerExist(containerName string, ctx context.Context, apiClient *client.Client) ContainerCheckResult {
+	contList, err := apiClient.ContainerList(ctx, client.ContainerListOptions{
 		All: true,
 	})
 	if err != nil {
@@ -80,13 +83,24 @@ func containerExist(containerName string, ctx context.Context, apiClient *client
 
 	cont_check := "/" + containerName
 
-	for _, cont := range cont_list.Items {
-		for _, name := range cont.Names {
-			if cont_check == name {
-				return true
-			}
+	for _, cont := range contList.Items {
+		if slices.Contains(cont.Names, cont_check) {
+			return ContainerCheckResult{Exist: true, Message: ContainerExists}
 		}
 	}
+	return ContainerCheckResult{Exist: false, Message: ContainerNotFound}
+}
 
-	return false
+type ContainerCheckResult struct {
+	Exist   bool
+	Message string
+}
+
+const (
+	ContainerExists   = "Container exists"
+	ContainerNotFound = "Container not found"
+)
+
+func removeContainer() {
+	panic(228)
 }
