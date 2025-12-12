@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"os"
 
@@ -11,9 +10,7 @@ import (
 )
 
 func main() {
-	for i := range 10 {
-		deployContainer(fmt.Sprintf("test-%v", i))
-	}
+	deployContainer("test-1")
 }
 
 func deployContainer(containerName string) {
@@ -64,8 +61,9 @@ func deployContainer(containerName string) {
 		panic(err)
 	}
 
+	// вывод резульатата
 	go io.Copy(os.Stdout, conn.Reader)
 
-	// TODO убрать go после тестов
-	go io.Copy(conn.Conn, os.Stdin)
+	// ввод
+	io.Copy(conn.Conn, os.Stdin)
 }
