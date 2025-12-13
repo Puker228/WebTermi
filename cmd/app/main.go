@@ -7,12 +7,13 @@ import (
 	"os"
 	"slices"
 
+	"github.com/Puker228/WebTermi/internal/app"
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"
 )
 
 func main() {
-	deployContainer("test-1")
+	app.Run()
 }
 
 func deployContainer(containerName string) {
@@ -91,17 +92,6 @@ func containerExist(containerName string, ctx context.Context, apiClient *client
 	}
 	return ContainerCheckResult{Exist: false, Message: ContainerNotFound, ContainerID: ""}
 }
-
-type ContainerCheckResult struct {
-	Exist       bool
-	Message     string
-	ContainerID string
-}
-
-const (
-	ContainerExists   = "Container exists"
-	ContainerNotFound = "Container not found"
-)
 
 func removeContainer(contID string) {
 	log.Fatalf("Container %v is exist", contID)
