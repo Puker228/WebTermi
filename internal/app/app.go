@@ -1,6 +1,9 @@
 package app
 
-import "github.com/Puker228/WebTermi/internal/docker"
+import (
+	"github.com/Puker228/WebTermi/internal/docker"
+	"github.com/Puker228/WebTermi/internal/session"
+)
 
 func Run() {
 	apiClient, err := docker.NewClient()
@@ -8,4 +11,7 @@ func Run() {
 		panic(err)
 	}
 	defer apiClient.Close()
+
+	sessionService := session.NewSessionService(apiClient)
+	sessionService.StartSession("user123")
 }

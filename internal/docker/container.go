@@ -14,7 +14,7 @@ type Service struct {
 	client *client.Client
 }
 
-func NewService(client *client.Client) *Service {
+func NewContainerService(client *client.Client) *Service {
 	return &Service{client: client}
 }
 
