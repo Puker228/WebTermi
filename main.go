@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"io"
+	"log"
 	"os"
 	"slices"
 
@@ -23,7 +24,7 @@ func deployContainer(containerName string) {
 	defer apiClient.Close()
 
 	if contCheckRes := containerExist(containerName, ctx, apiClient); contCheckRes.Exist {
-		removeContainer()
+		removeContainer(contCheckRes.ContainerID)
 	}
 
 	// подтягивание образа
@@ -85,15 +86,16 @@ func containerExist(containerName string, ctx context.Context, apiClient *client
 
 	for _, cont := range contList.Items {
 		if slices.Contains(cont.Names, cont_check) {
-			return ContainerCheckResult{Exist: true, Message: ContainerExists}
+			return ContainerCheckResult{Exist: true, Message: ContainerExists, ContainerID: cont.ID}
 		}
 	}
-	return ContainerCheckResult{Exist: false, Message: ContainerNotFound}
+	return ContainerCheckResult{Exist: false, Message: ContainerNotFound, ContainerID: ""}
 }
 
 type ContainerCheckResult struct {
-	Exist   bool
-	Message string
+	Exist       bool
+	Message     string
+	ContainerID string
 }
 
 const (
@@ -101,6 +103,6 @@ const (
 	ContainerNotFound = "Container not found"
 )
 
-func removeContainer() {
-	panic(228)
+func removeContainer(contID string) {
+	log.Fatalf("Container %v is exist", contID)
 }
