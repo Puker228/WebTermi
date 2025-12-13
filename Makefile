@@ -22,3 +22,6 @@ prune:
 	docker compose down
 	docker system prune -a -f
 	docker volume prune -a -f
+
+format:
+	go fmt ./...

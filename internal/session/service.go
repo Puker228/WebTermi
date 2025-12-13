@@ -3,6 +3,7 @@ package session
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/Puker228/WebTermi/internal/docker"
 	"github.com/moby/moby/client"
@@ -22,8 +23,15 @@ func (s *Session) StartSession(userID string) {
 	fmt.Println("starting session")
 	fmt.Println("create and start container")
 	ctx := context.Background()
+	if contCheckRes := s.docker.ContainerExist(ctx, userID); contCheckRes.Exist {
+		s.docker.RemoveContainer(ctx, userID)
+	}
 	containerID := s.docker.CreateAndStart(ctx, userID)
 	s.docker.Attach(ctx, containerID)
-	fmt.Println("stopping container")
-	s.docker.RemoveContainer(containerID)
+
+	func() {
+		fmt.Println("stopping container")
+		<-time.After(10 * time.Second)
+		s.docker.RemoveContainer(ctx, containerID)
+	}()
 }

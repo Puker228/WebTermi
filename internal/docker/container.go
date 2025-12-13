@@ -2,9 +2,11 @@ package docker
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"os"
+	"slices"
 
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"
@@ -68,6 +70,30 @@ func (s *Service) Attach(ctx context.Context, containerID string) {
 	go io.Copy(conn.Conn, os.Stdin)
 }
 
-func (s *Service) RemoveContainer(containerID string) {
-	log.Fatalf("Removing container:%v", containerID)
+func (s *Service) RemoveContainer(ctx context.Context, containerID string) {
+	result, err := s.client.ContainerRemove(ctx, containerID, client.ContainerRemoveOptions{
+		RemoveVolumes: true,
+		Force:         true,
+	})
+	if err != nil {
+		log.Fatalf("Failed to remove container: %v", err)
+	}
+	fmt.Println(result)
+}
+
+func (s *Service) ContainerExist(ctx context.Context, containerName string) ContainerCheckResult {
+	contList, err := s.client.ContainerList(ctx, client.ContainerListOptions{
+		All: true,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	contCheck := "/" + containerName
+	for _, cont := range contList.Items {
+		if slices.Contains(cont.Names, contCheck) {
+			return ContainerCheckResult{Exist: true, Message: ContainerExists, ContainerID: cont.ID}
+		}
+	}
+	return ContainerCheckResult{Exist: false, Message: ContainerNotFound, ContainerID: ""}
 }
