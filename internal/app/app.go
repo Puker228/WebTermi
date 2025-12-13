@@ -12,6 +12,8 @@ func Run() {
 	}
 	defer apiClient.Close()
 
-	sessionService := session.NewSessionService(apiClient)
+	dockerSvc := docker.NewContainerService(apiClient)
+
+	sessionService := session.NewSessionService(dockerSvc)
 	sessionService.StartSession("user123")
 }

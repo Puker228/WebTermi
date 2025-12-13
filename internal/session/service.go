@@ -4,19 +4,14 @@ import (
 	"context"
 	"fmt"
 	"time"
-
-	"github.com/Puker228/WebTermi/internal/docker"
-	"github.com/moby/moby/client"
 )
 
 type Session struct {
-	docker *docker.Service
+	docker ContainerPort
 }
 
-func NewSessionService(client *client.Client) *Session {
-	return &Session{
-		docker: docker.NewContainerService(client),
-	}
+func NewSessionService(dockerPort ContainerPort) *Session {
+	return &Session{docker: dockerPort}
 }
 
 func (s *Session) StartSession(userID string) {
@@ -24,7 +19,7 @@ func (s *Session) StartSession(userID string) {
 	fmt.Println("create and start container")
 	ctx := context.Background()
 	if contCheckRes := s.docker.ContainerExist(ctx, userID); contCheckRes.Exist {
-		s.docker.RemoveContainer(ctx, userID)
+		s.docker.RemoveContainer(ctx, contCheckRes.ContainerID)
 	}
 	containerID := s.docker.CreateAndStart(ctx, userID)
 	s.docker.Attach(ctx, containerID)
