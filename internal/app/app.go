@@ -20,9 +20,11 @@ func RunServer() {
 	defer dockerClient.Close()
 
 	redisClient := cache.NewClient()
-	fmt.Println(redisClient)
+	defer redisClient.Close()
 
 	dockerSvc := docker.NewContainerService(dockerClient)
+	redisSVC := cache.NewRedisService(redisClient)
+	fmt.Println(redisSVC)
 
 	sessionService := session.NewSessionService(dockerSvc)
 
