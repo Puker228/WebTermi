@@ -22,11 +22,12 @@ func (s *Session) StartSession(userID string) {
 		s.docker.RemoveContainer(ctx, contCheckRes.ContainerID)
 	}
 	containerID := s.docker.CreateAndStart(ctx, userID)
-	s.docker.Attach(ctx, containerID)
 
-	func() {
+	go func() {
 		fmt.Println("stopping container")
-		<-time.After(10 * time.Second)
+		<-time.After(20 * time.Second)
 		s.docker.RemoveContainer(ctx, containerID)
 	}()
+
+	s.docker.Attach(ctx, containerID)
 }

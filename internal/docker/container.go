@@ -22,6 +22,8 @@ func NewContainerService(client *client.Client) *Service {
 
 func (s *Service) CreateAndStart(ctx context.Context, containerName string) string {
 	// pull image
+	// TODO добавить возможность выбрать образ
+	// TODO загрузить образ в регистри
 	reader, err := s.client.ImagePull(ctx, "ubuntu:24.04", client.ImagePullOptions{})
 	if err != nil {
 		log.Fatalf("Failed to pull image: %v", err)
@@ -67,7 +69,7 @@ func (s *Service) Attach(ctx context.Context, containerID string) {
 	go io.Copy(os.Stdout, conn.Reader)
 
 	// input
-	go io.Copy(conn.Conn, os.Stdin)
+	io.Copy(conn.Conn, os.Stdin)
 }
 
 func (s *Service) RemoveContainer(ctx context.Context, containerID string) {
