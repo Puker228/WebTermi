@@ -25,3 +25,6 @@ prune:
 
 format:
 	go fmt ./...
+
+run:
+	go run cmd/app/main.go
