@@ -3,6 +3,7 @@ module github.com/Puker228/WebTermi
 go 1.25.5
 
 require (
+	github.com/google/uuid v1.6.0
 	github.com/moby/moby/api v1.52.0
 	github.com/moby/moby/client v0.2.1
 )

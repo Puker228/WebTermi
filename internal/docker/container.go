@@ -20,20 +20,12 @@ func NewContainerService(client *client.Client) *Service {
 	return &Service{client: client}
 }
 
-func (s *Service) CreateAndStart(ctx context.Context, containerName string) string {
-	// pull image
+func (s *Service) Create(ctx context.Context, containerName string) string {
 	// TODO добавить возможность выбрать образ
-	// TODO загрузить образ в регистри
-	reader, err := s.client.ImagePull(ctx, "ubuntu:24.04", client.ImagePullOptions{})
-	if err != nil {
-		log.Fatalf("Failed to pull image: %v", err)
-	}
-	io.Copy(os.Stdout, reader)
-
 	// create container
 	resp, err := s.client.ContainerCreate(ctx, client.ContainerCreateOptions{
 		Name:  containerName,
-		Image: "ubuntu:24.04",
+		Image: "myub:latest",
 		Config: &container.Config{
 			Cmd:          []string{"/bin/bash"},
 			AttachStdin:  true,
@@ -47,11 +39,13 @@ func (s *Service) CreateAndStart(ctx context.Context, containerName string) stri
 		log.Fatalf("Failed to create container: %v", err)
 	}
 
-	// starting container
-	if _, err := s.client.ContainerStart(ctx, resp.ID, client.ContainerStartOptions{}); err != nil {
+	return resp.ID
+}
+
+func (s *Service) Start(ctx context.Context, containerID string) {
+	if _, err := s.client.ContainerStart(ctx, containerID, client.ContainerStartOptions{}); err != nil {
 		log.Fatalf("Failed to start container: %v", err)
 	}
-	return resp.ID
 }
 
 func (s *Service) Attach(ctx context.Context, containerID string) {
@@ -72,7 +66,14 @@ func (s *Service) Attach(ctx context.Context, containerID string) {
 	io.Copy(conn.Conn, os.Stdin)
 }
 
-func (s *Service) RemoveContainer(ctx context.Context, containerID string) {
+func (s *Service) Stop(ctx context.Context, containerID string) {
+	if _, err := s.client.ContainerStop(ctx, containerID, client.ContainerStopOptions{}); err != nil {
+		log.Fatalf("Failed to start container: %v", err)
+	}
+}
+
+func (s *Service) Remove(ctx context.Context, containerID string) {
+	// remove container
 	result, err := s.client.ContainerRemove(ctx, containerID, client.ContainerRemoveOptions{
 		RemoveVolumes: true,
 		Force:         true,

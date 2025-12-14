@@ -27,4 +27,5 @@ format:
 	go fmt ./...
 
 run:
+	cd linux && docker build -t myub .
 	go run cmd/app/main.go

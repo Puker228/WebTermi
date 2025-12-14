@@ -7,8 +7,10 @@ import (
 )
 
 type ContainerPort interface {
-	CreateAndStart(ctx context.Context, containerName string) string
+	Create(ctx context.Context, containerName string) string
+	Start(ctx context.Context, containerName string)
 	Attach(ctx context.Context, containerID string)
-	RemoveContainer(ctx context.Context, containerID string)
+	Remove(ctx context.Context, containerID string)
+	Stop(ctx context.Context, containerID string)
 	ContainerExist(ctx context.Context, containerName string) docker.ContainerCheckResult
 }
