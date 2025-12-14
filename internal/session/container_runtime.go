@@ -6,7 +6,7 @@ import (
 	"github.com/Puker228/WebTermi/internal/docker"
 )
 
-type ContainerPort interface {
+type ContainerRuntime interface {
 	Create(ctx context.Context, containerName string) string
 	Start(ctx context.Context, containerName string)
 	Attach(ctx context.Context, containerID string)

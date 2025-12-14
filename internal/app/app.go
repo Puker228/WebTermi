@@ -1,22 +1,28 @@
 package app
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
+	"github.com/Puker228/WebTermi/internal/cache"
 	"github.com/Puker228/WebTermi/internal/docker"
 	"github.com/Puker228/WebTermi/internal/session"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
-func Run() {
-	apiClient, err := docker.NewClient()
+func RunServer() {
+	dockerClient, err := docker.NewClient()
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer apiClient.Close()
-	dockerSvc := docker.NewContainerService(apiClient)
+	defer dockerClient.Close()
+
+	redisClient := cache.NewClient()
+	fmt.Println(redisClient)
+
+	dockerSvc := docker.NewContainerService(dockerClient)
 
 	sessionService := session.NewSessionService(dockerSvc)
 

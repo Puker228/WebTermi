@@ -2,6 +2,9 @@ networks:
   webtermi_network:
     external: true
 
+volumes:
+  redis_data:
+
 services:
   backend:
     stdin_open: true
@@ -11,7 +14,27 @@ services:
       dockerfile: Dockerfile
     networks:
       - webtermi_network
+    depends_on:
+      redis:
+        condition: service_healthy
     ports:
       - "1323:1323"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+
+  redis:
+    image: redis:8.4
+    ports:
+      - "6379:6379"
+    command: [ "redis-server" ]
+    volumes:
+      - redis_data:/data
+    networks:
+      - webtermi_network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    environment:
+      TZ: Europe/Moscow

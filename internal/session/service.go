@@ -7,10 +7,10 @@ import (
 )
 
 type Session struct {
-	docker ContainerPort
+	docker ContainerRuntime
 }
 
-func NewSessionService(dockerPort ContainerPort) *Session {
+func NewSessionService(dockerPort ContainerRuntime) *Session {
 	return &Session{docker: dockerPort}
 }
 
