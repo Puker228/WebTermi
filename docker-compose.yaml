@@ -11,5 +11,7 @@ services:
       dockerfile: Dockerfile
     networks:
       - webtermi_network
+    ports:
+      - "1323:1323"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
