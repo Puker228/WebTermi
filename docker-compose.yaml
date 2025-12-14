@@ -4,6 +4,8 @@ networks:
 
 services:
   backend:
+    stdin_open: true
+    tty: true
     build:
       context: .
       dockerfile: Dockerfile
