@@ -2,12 +2,11 @@ package app
 
 import (
 	"log"
-	"net/http"
 
 	"github.com/Puker228/WebTermi/internal/cache"
 	"github.com/Puker228/WebTermi/internal/docker"
 	"github.com/Puker228/WebTermi/internal/session"
-	"github.com/google/uuid"
+	"github.com/Puker228/WebTermi/internal/transport"
 	"github.com/labstack/echo/v4"
 )
 
@@ -26,10 +25,11 @@ func RunServer() {
 
 	sessionService := session.NewSessionService(dockerSvc, redisSVC)
 
+	handler := transport.NewSessionHandler(sessionService)
+
 	e := echo.New()
-	e.POST("/container", func(c echo.Context) error {
-		go sessionService.StartSession(uuid.NewString())
-		return c.String(http.StatusOK, "Service Started")
-	})
+	apiV1 := e.Group("/api/v1")
+	apiV1.POST("/session", handler.Start)
+
 	e.Logger.Fatal(e.Start(":1323"))
 }
