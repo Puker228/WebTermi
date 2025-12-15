@@ -8,10 +8,11 @@ import (
 
 type Session struct {
 	docker ContainerRuntime
+	cache  UserCache
 }
 
-func NewSessionService(dockerPort ContainerRuntime) *Session {
-	return &Session{docker: dockerPort}
+func NewSessionService(dockerPort ContainerRuntime, cache UserCache) *Session {
+	return &Session{docker: dockerPort, cache: cache}
 }
 
 func (s *Session) StartSession(userID string) {
@@ -25,6 +26,7 @@ func (s *Session) StartSession(userID string) {
 
 	containerID := s.docker.Create(ctx, userID)
 	s.docker.Start(ctx, containerID)
+	s.cache.Set(containerID, time.Now().GoString())
 
 	go func() {
 		fmt.Println("stopping container")
