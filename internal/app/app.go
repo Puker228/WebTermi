@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -20,14 +19,15 @@ func RunServer() {
 	defer dockerClient.Close()
 
 	redisClient := cache.NewClient()
-	fmt.Println(redisClient)
+	defer redisClient.Close()
 
 	dockerSvc := docker.NewContainerService(dockerClient)
+	redisSVC := cache.NewRedisService(redisClient)
 
-	sessionService := session.NewSessionService(dockerSvc)
+	sessionService := session.NewSessionService(dockerSvc, redisSVC)
 
 	e := echo.New()
-	e.GET("/", func(c echo.Context) error {
+	e.POST("/container", func(c echo.Context) error {
 		go sessionService.StartSession(uuid.NewString())
 		return c.String(http.StatusOK, "Service Started")
 	})
