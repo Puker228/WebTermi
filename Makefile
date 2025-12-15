@@ -9,6 +9,7 @@ up:
 	docker compose build
 	docker compose down
 	docker compose up -d
+	cd linux && docker build -t myub .
 
 stop:
 	docker compose stop
@@ -29,3 +30,6 @@ format:
 run:
 	cd linux && docker build -t myub .
 	go run cmd/app/main.go
+
+build-web:
+	go build cmd/app/main.go
