@@ -20,9 +20,10 @@ func (s *Session) StartSession(userID string) {
 	fmt.Println("starting session")
 	fmt.Println("create and start container")
 	ctx := context.Background()
-	if contCheckRes := s.docker.ContainerExist(ctx, userID); contCheckRes.Exist {
-		s.docker.Stop(ctx, contCheckRes.ContainerID)
-		s.docker.Remove(ctx, contCheckRes.ContainerID)
+	if contCheckRes, message, containerID := s.docker.ContainerExist(ctx, userID); contCheckRes {
+		fmt.Println(message)
+		s.docker.Stop(ctx, containerID)
+		s.docker.Remove(ctx, containerID)
 	}
 
 	containerID := s.docker.Create(ctx, userID)
@@ -30,12 +31,16 @@ func (s *Session) StartSession(userID string) {
 	s.cache.Set(containerID, time.Now().GoString())
 
 	go func() {
-		fmt.Println("stopping container")
-		<-time.After(20 * time.Second)
-		s.docker.Stop(ctx, containerID)
-		s.docker.Remove(ctx, containerID)
 		fmt.Println("container stopped")
 	}()
 
 	s.docker.Attach(ctx, containerID)
+}
+
+func (s *Session) CleanupContainer() {
+	// ctx := context.Background()
+	fmt.Println("stopping containers")
+	// s.docker.Stop(ctx, containerID)
+	// s.docker.Remove(ctx, containerID)
+
 }
