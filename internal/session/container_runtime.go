@@ -9,4 +9,5 @@ type ContainerRuntime interface {
 	Remove(ctx context.Context, containerID string)
 	Stop(ctx context.Context, containerID string)
 	ContainerExist(ctx context.Context, containerName string) (bool, string, string)
+	ContainerList(ctx context.Context) ([]string, error)
 }

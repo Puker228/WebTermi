@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"slices"
+	"strings"
 
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"
@@ -99,4 +100,21 @@ func (s *Service) ContainerExist(ctx context.Context, containerName string) (boo
 		}
 	}
 	return false, ContainerNotFound, ""
+}
+
+func (s *Service) ContainerList(ctx context.Context) ([]string, error) {
+	contList, err := s.client.ContainerList(ctx, client.ContainerListOptions{
+		All: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var result []string
+	for _, cont := range contList.Items {
+		for _, name := range cont.Names {
+			result = append(result, strings.TrimPrefix(name, "/"))
+		}
+	}
+	return result, nil
 }
