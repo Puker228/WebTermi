@@ -1,4 +1,4 @@
-// Package app
+// Package app solve project in one func
 package app
 
 import (
@@ -29,8 +29,8 @@ func RunServer() {
 	handler := transport.NewSessionHandler(sessionService)
 
 	e := echo.New()
-	apiV1 := e.Group("/api/v1")
-	apiV1.POST("/session", handler.Start)
+
+	transport.RouterRegister(e, handler)
 
 	e.Logger.Fatal(e.Start(":1323"))
 }
