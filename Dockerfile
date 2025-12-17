@@ -8,6 +8,5 @@ RUN go mod download
 
 COPY . .
 RUN go build -v -o /usr/local/bin/app ./cmd/app
-RUN go build -v -o /usr/local/bin/app ./cmd/worker
 
 CMD ["app"]
