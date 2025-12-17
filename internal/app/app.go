@@ -1,13 +1,13 @@
+// Package app solve project in one func
 package app
 
 import (
 	"log"
-	"net/http"
 
 	"github.com/Puker228/WebTermi/internal/cache"
 	"github.com/Puker228/WebTermi/internal/docker"
 	"github.com/Puker228/WebTermi/internal/session"
-	"github.com/google/uuid"
+	"github.com/Puker228/WebTermi/internal/transport"
 	"github.com/labstack/echo/v4"
 )
 
@@ -26,10 +26,11 @@ func RunServer() {
 
 	sessionService := session.NewSessionService(dockerSvc, redisSVC)
 
+	handler := transport.NewSessionHandler(sessionService)
+
 	e := echo.New()
-	e.POST("/container", func(c echo.Context) error {
-		go sessionService.StartSession(uuid.NewString())
-		return c.String(http.StatusOK, "Service Started")
-	})
+
+	transport.RouterRegister(e, handler)
+
 	e.Logger.Fatal(e.Start(":1323"))
 }
