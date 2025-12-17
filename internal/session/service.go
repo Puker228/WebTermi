@@ -1,3 +1,4 @@
+// Package session
 package session
 
 import (
