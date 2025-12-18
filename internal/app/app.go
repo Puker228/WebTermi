@@ -2,7 +2,9 @@
 package app
 
 import (
+	"fmt"
 	"log"
+	"time"
 
 	"github.com/Puker228/WebTermi/internal/cache"
 	"github.com/Puker228/WebTermi/internal/docker"
@@ -16,14 +18,12 @@ func RunServer() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer dockerClient.Close()
-
 	redisClient := cache.NewClient()
+	defer dockerClient.Close()
 	defer redisClient.Close()
 
 	dockerSvc := docker.NewContainerService(dockerClient)
 	redisSVC := cache.NewRedisService(redisClient)
-
 	sessionService := session.NewSessionService(dockerSvc, redisSVC)
 
 	handler := transport.NewSessionHandler(sessionService)
@@ -33,4 +33,13 @@ func RunServer() {
 	transport.RouterRegister(e, handler)
 
 	e.Logger.Fatal(e.Start(":1323"))
+}
+
+func RunWorker() {
+	for i := range 100 {
+		if i%2 == 0 {
+			time.Sleep(1 * time.Minute)
+		}
+		fmt.Printf("%v: WebTermiorker in running", i)
+	}
 }

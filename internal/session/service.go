@@ -28,7 +28,9 @@ func (s *Session) StartSession(userID string) {
 
 	containerID := s.docker.Create(ctx, userID)
 	s.docker.Start(ctx, containerID)
-	s.cache.Set(containerID, time.Now().GoString())
+	if err := s.cache.Set(containerID, time.Now().GoString()); err != nil {
+		fmt.Println("error while set key in redis")
+	}
 
 	go func() {
 		fmt.Println("container stopped")
@@ -42,5 +44,4 @@ func (s *Session) CleanupContainer() {
 	fmt.Println("stopping containers")
 	// s.docker.Stop(ctx, containerID)
 	// s.docker.Remove(ctx, containerID)
-
 }

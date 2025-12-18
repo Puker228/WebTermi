@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/Puker228/WebTermi/internal/app"
@@ -15,6 +14,6 @@ func init() {
 }
 
 func main() {
+	go app.RunWorker()
 	app.RunServer()
-	fmt.Println("start cron")
 }
