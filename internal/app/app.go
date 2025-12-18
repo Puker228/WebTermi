@@ -2,6 +2,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -33,7 +34,14 @@ func RunServer() {
 	transport.RouterRegister(e, handler)
 
 	c := cron.New()
-	c.AddFunc("@every 1m", func() { fmt.Println("Every hour thirty") })
+	c.AddFunc("@every 1m", func() {
+		ctx := context.Background()
+		res, err := dockerSvc.ContainerList(ctx)
+		if err != nil {
+			fmt.Println("228")
+		}
+		fmt.Println(res)
+	})
 	c.Start()
 
 	e.Logger.Fatal(e.Start(":1323"))
