@@ -1,10 +1,6 @@
 package session
 
-import (
-	"context"
-
-	"github.com/Puker228/WebTermi/internal/docker"
-)
+import "context"
 
 type ContainerRuntime interface {
 	Create(ctx context.Context, containerName string) string
@@ -12,5 +8,6 @@ type ContainerRuntime interface {
 	Attach(ctx context.Context, containerID string)
 	Remove(ctx context.Context, containerID string)
 	Stop(ctx context.Context, containerID string)
-	ContainerExist(ctx context.Context, containerName string) docker.ContainerCheckResult
+	ContainerExist(ctx context.Context, containerName string) (bool, string, string)
+	ContainerList(ctx context.Context) ([]string, error)
 }

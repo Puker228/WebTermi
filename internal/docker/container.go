@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"slices"
+	"strings"
 
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/client"
@@ -84,7 +85,7 @@ func (s *Service) Remove(ctx context.Context, containerID string) {
 	fmt.Println(result)
 }
 
-func (s *Service) ContainerExist(ctx context.Context, containerName string) ContainerCheckResult {
+func (s *Service) ContainerExist(ctx context.Context, containerName string) (bool, string, string) {
 	contList, err := s.client.ContainerList(ctx, client.ContainerListOptions{
 		All: true,
 	})
@@ -95,8 +96,25 @@ func (s *Service) ContainerExist(ctx context.Context, containerName string) Cont
 	contCheck := "/" + containerName
 	for _, cont := range contList.Items {
 		if slices.Contains(cont.Names, contCheck) {
-			return ContainerCheckResult{Exist: true, Message: ContainerExists, ContainerID: cont.ID}
+			return true, ContainerExists, cont.ID
 		}
 	}
-	return ContainerCheckResult{Exist: false, Message: ContainerNotFound, ContainerID: ""}
+	return false, ContainerNotFound, ""
+}
+
+func (s *Service) ContainerList(ctx context.Context) ([]string, error) {
+	contList, err := s.client.ContainerList(ctx, client.ContainerListOptions{
+		All: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var result []string
+	for _, cont := range contList.Items {
+		for _, name := range cont.Names {
+			result = append(result, strings.TrimPrefix(name, "/"))
+		}
+	}
+	return result, nil
 }
