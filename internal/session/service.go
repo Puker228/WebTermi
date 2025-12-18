@@ -38,10 +38,3 @@ func (s *Session) StartSession(userID string) {
 
 	s.docker.Attach(ctx, containerID)
 }
-
-func (s *Session) CleanupContainer() {
-	// ctx := context.Background()
-	fmt.Println("stopping containers")
-	// s.docker.Stop(ctx, containerID)
-	// s.docker.Remove(ctx, containerID)
-}

@@ -14,6 +14,5 @@ func init() {
 }
 
 func main() {
-	go app.RunWorker()
 	app.RunServer()
 }
