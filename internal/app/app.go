@@ -3,7 +3,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/Puker228/WebTermi/internal/cache"
@@ -34,13 +33,28 @@ func RunServer() {
 	transport.RouterRegister(e, handler)
 
 	c := cron.New()
-	c.AddFunc("@every 1m", func() {
+	c.AddFunc("@every 20m", func() {
 		ctx := context.Background()
-		res, err := dockerSvc.ContainerList(ctx)
+		names, err := dockerSvc.ContainerList(ctx)
 		if err != nil {
-			fmt.Println("228")
+			log.Printf("cron: failed to list containers: %v", err)
+			return
 		}
-		fmt.Println(res)
+
+		for _, name := range names {
+			if name == "backend" || name == "redis" {
+				continue
+			}
+			func(n string) {
+				defer func() {
+					if r := recover(); r != nil {
+						log.Printf("cron: panic while stopping container %s: %v", n, r)
+					}
+				}()
+				dockerSvc.Stop(ctx, n)
+				log.Printf("cron: stopped container %s", n)
+			}(name)
+		}
 	})
 	c.Start()
 
