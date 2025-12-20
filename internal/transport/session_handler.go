@@ -10,10 +10,10 @@ import (
 )
 
 type SessionHandler struct {
-	svc *session.Session
+	svc *session.Service
 }
 
-func NewSessionHandler(svc *session.Session) *SessionHandler {
+func NewSessionHandler(svc *session.Service) *SessionHandler {
 	return &SessionHandler{svc: svc}
 }
 
@@ -26,5 +26,6 @@ func (h *SessionHandler) Start(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"status": status,
+		"userID": userID,
 	})
 }
