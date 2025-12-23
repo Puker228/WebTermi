@@ -3,15 +3,43 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/Puker228/WebTermi/internal/cache"
 	"github.com/Puker228/WebTermi/internal/docker"
 	"github.com/Puker228/WebTermi/internal/session"
 	"github.com/Puker228/WebTermi/internal/transport"
+
+	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 	"github.com/robfig/cron"
 )
+
+var upgrader = websocket.Upgrader{}
+
+func hello(c echo.Context) error {
+	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
+	if err != nil {
+		return err
+	}
+	defer ws.Close()
+
+	for {
+		// Write
+		err := ws.WriteMessage(websocket.TextMessage, []byte("Hello, Client!"))
+		if err != nil {
+			c.Logger().Error(err)
+		}
+
+		// Read
+		_, msg, err := ws.ReadMessage()
+		if err != nil {
+			c.Logger().Error(err)
+		}
+		fmt.Printf("%s\n", msg)
+	}
+}
 
 func RunServer() {
 	dockerClient, err := docker.NewClient()
@@ -57,6 +85,7 @@ func RunServer() {
 		}
 	})
 	c.Start()
-
+	e.Static("/", "./public")
+	e.GET("/ws", hello)
 	e.Logger.Fatal(e.Start(":1323"))
 }
