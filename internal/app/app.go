@@ -2,7 +2,12 @@
 package app
 
 import (
+	"context"
 	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"time"
 
 	"github.com/Puker228/WebTermi/internal/cache"
 	"github.com/Puker228/WebTermi/internal/cron"
@@ -34,9 +39,26 @@ func RunServer() {
 	e := echo.New()
 
 	handler := transport.NewSessionHandler(sessionService)
-	transport.RouterRegister(e, handler)
 	transport.MiddlewareRegister(e)
+	transport.RouterRegister(e, handler)
 
 	e.Static("/", "./public")
-	e.Logger.Fatal(e.Start(":1323"))
+
+	// gracefull shutdown. Ref: https://echo.labstack.com/docs/cookbook/graceful-shutdown
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+	// Start server
+	go func() {
+		if err := e.Start(":1323"); err != nil && err != http.ErrServerClosed {
+			e.Logger.Fatal("shutting down the server")
+		}
+	}()
+
+	// Wait for interrupt signal to gracefully shut down the server with a timeout of 10 seconds.
+	<-ctx.Done()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := e.Shutdown(ctx); err != nil {
+		e.Logger.Fatal(err)
+	}
 }
