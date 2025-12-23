@@ -27,4 +27,5 @@ func MiddlewareRegister(e *echo.Echo) {
 			return nil
 		},
 	}))
+	e.Use(middleware.Recover())
 }
