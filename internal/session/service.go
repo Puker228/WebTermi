@@ -7,16 +7,16 @@ import (
 	"time"
 )
 
-type Session struct {
+type Service struct {
 	docker ContainerRuntime
 	cache  UserCache
 }
 
-func NewSessionService(dockerPort ContainerRuntime, cache UserCache) *Session {
-	return &Session{docker: dockerPort, cache: cache}
+func NewSessionService(dockerPort ContainerRuntime, cache UserCache) *Service {
+	return &Service{docker: dockerPort, cache: cache}
 }
 
-func (s *Session) StartSession(userID string) {
+func (s *Service) StartSession(userID string) {
 	fmt.Println("starting session")
 	fmt.Println("create and start container")
 	ctx := context.Background()
