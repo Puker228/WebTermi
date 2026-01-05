@@ -7,3 +7,5 @@ Makefile
 README.md
 .git
 .idea
+.vscode
+.env-example
