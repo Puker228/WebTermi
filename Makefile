@@ -28,8 +28,10 @@ format:
 	go fmt ./...
 
 run:
-	cd linux && docker build -t myub .
 	go run cmd/app/main.go
+
+build-linux-image:
+	cd linux && docker build -t myub .
 
 build-web:
 	go build cmd/app/main.go
