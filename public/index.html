@@ -3,36 +3,235 @@
 
 <head>
   <meta charset="utf-8">
-  <title>WebSocket</title>
+  <title>WebTermi - Linux Terminal</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #1e1e1e;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+    }
+
+    #terminal-container {
+      width: 100vw;
+      height: 100vh;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+
+    #status {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      padding: 5px 10px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      border-radius: 4px;
+      font-size: 12px;
+      z-index: 1000;
+    }
+
+    #status.connected {
+      background-color: rgba(0, 255, 0, 0.3);
+    }
+
+    #status.disconnected {
+      background-color: rgba(255, 0, 0, 0.3);
+    }
+
+    #status.connecting {
+      background-color: rgba(255, 255, 0, 0.3);
+    }
+  </style>
 </head>
 
 <body>
-  <p id="output"></p>
+  <div id="status" class="connecting">Connecting...</div>
+  <div id="terminal-container"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
   <script>
-    var loc = window.location;
-    var uri = 'ws:';
-
-    if (loc.protocol === 'https:') {
-      uri = 'wss:';
+    // Create or get userID
+    async function getOrCreateSession() {
+      const urlParams = new URLSearchParams(window.location.search);
+      let userID = urlParams.get('userID');
+      
+      if (!userID) {
+        // Try to get from session storage
+        userID = sessionStorage.getItem('userID');
+      }
+      
+      // If no userID exists, create a new session
+      if (!userID) {
+        try {
+          statusEl.textContent = 'Creating session...';
+          statusEl.className = 'connecting';
+          
+          const response = await fetch('/api/v1/session', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (!response.ok) {
+            throw new Error('Failed to create session');
+          }
+          
+          const data = await response.json();
+          userID = data.userID;
+          sessionStorage.setItem('userID', userID);
+          
+          statusEl.textContent = 'Waiting for container...';
+          // Wait a bit for container to be created and started
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        } catch (error) {
+          console.error('Error creating session:', error);
+          term.writeln('\r\n\x1b[31mFailed to create session: ' + error.message + '\x1b[0m\r\n');
+          statusEl.textContent = 'Error';
+          statusEl.className = 'disconnected';
+          return null;
+        }
+      } else {
+        sessionStorage.setItem('userID', userID);
+      }
+      
+      return userID;
     }
-    uri += '//' + loc.host;
-    uri += loc.pathname + 'api/v1/ws';
 
-    ws = new WebSocket(uri)
+    // Initialize terminal first
+    const term = new Terminal({
+      cursorBlink: true,
+      fontSize: 14,
+      fontFamily: 'Courier New, monospace',
+      theme: {
+        background: '#1e1e1e',
+        foreground: '#d4d4d4',
+        cursor: '#aeafad',
+        black: '#000000',
+        red: '#cd3131',
+        green: '#0dbc79',
+        yellow: '#e5e510',
+        blue: '#2472c8',
+        magenta: '#bc3fbc',
+        cyan: '#11a8cd',
+        white: '#e5e5e5',
+        brightBlack: '#666666',
+        brightRed: '#f14c4c',
+        brightGreen: '#23d18b',
+        brightYellow: '#f5f543',
+        brightBlue: '#3b8eea',
+        brightMagenta: '#d670d6',
+        brightCyan: '#29b8db',
+        brightWhite: '#e5e5e5'
+      }
+    });
 
-    ws.onopen = function() {
-      console.log('Connected')
-    }
+    const fitAddon = new FitAddon.FitAddon();
+    term.loadAddon(fitAddon);
+    term.open(document.getElementById('terminal-container'));
+    fitAddon.fit();
 
-    ws.onmessage = function(evt) {
-      var out = document.getElementById('output');
-      out.innerHTML += evt.data + '<br>';
-    }
+    const statusEl = document.getElementById('status');
 
-    setInterval(function() {
-      ws.send('Hello, Server!');
-    }, 1000);
+    // Handle window resize
+    window.addEventListener('resize', () => {
+      fitAddon.fit();
+    });
+
+    // Main initialization
+    (async function() {
+      const userID = await getOrCreateSession();
+      if (!userID) {
+        return;
+      }
+      // Setup websocket connection
+      const loc = window.location;
+      let uri = 'ws:';
+      if (loc.protocol === 'https:') {
+        uri = 'wss:';
+      }
+      uri += '//' + loc.host;
+      uri += '/api/v1/ws?userID=' + encodeURIComponent(userID);
+
+      // Retry connecting to websocket if container isn't ready
+      let retries = 0;
+      const maxRetries = 5;
+      let ws = null;
+      
+      function connectWebSocket() {
+        statusEl.textContent = 'Connecting to terminal...';
+        statusEl.className = 'connecting';
+        
+        ws = new WebSocket(uri);
+
+        ws.onopen = function() {
+          console.log('WebSocket connected');
+          retries = 0; // Reset retries on successful connection
+          statusEl.textContent = 'Connected';
+          statusEl.className = 'connected';
+          term.writeln('\r\n\x1b[32mConnected to terminal\x1b[0m\r\n');
+        };
+
+        ws.onerror = function(error) {
+          console.error('WebSocket error:', error);
+          // Don't show error immediately, let onclose handle retry logic
+        };
+
+        ws.onclose = function(event) {
+          // If not a normal closure and we haven't exceeded retries, try again
+          if (event.code !== 1000 && retries < maxRetries) {
+            retries++;
+            term.writeln(`\r\n\x1b[33mRetrying connection (${retries}/${maxRetries})...\x1b[0m\r\n`);
+            setTimeout(connectWebSocket, 2000);
+          } else {
+            console.log('WebSocket disconnected');
+            statusEl.textContent = 'Disconnected';
+            statusEl.className = 'disconnected';
+            if (retries >= maxRetries) {
+              term.writeln('\r\n\x1b[31mFailed to connect after multiple retries\x1b[0m\r\n');
+            } else {
+              term.writeln('\r\n\x1b[31mConnection closed\x1b[0m\r\n');
+            }
+          }
+        };
+
+        // Handle binary messages from server (container output)
+        ws.onmessage = function(evt) {
+          if (evt.data instanceof ArrayBuffer) {
+            const data = new Uint8Array(evt.data);
+            term.write(data);
+          } else if (evt.data instanceof Blob) {
+            evt.data.arrayBuffer().then(buffer => {
+              const data = new Uint8Array(buffer);
+              term.write(data);
+            });
+          } else {
+            // Text message
+            term.write(evt.data);
+          }
+        };
+      }
+      
+      // Send user input to server (set up once, works for all connections)
+      term.onData(function(data) {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(data);
+        }
+      });
+
+      // Handle terminal resize
+      term.onResize(function(size) {
+        // Send resize message to container if needed
+        // This would require implementing window resize handling in the backend
+      });
+      
+      // Start the connection
+      connectWebSocket();
+    })();
   </script>
 </body>
 
