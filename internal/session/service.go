@@ -16,6 +16,10 @@ func NewSessionService(dockerPort ContainerRuntime, cache UserCache) *Service {
 	return &Service{docker: dockerPort, cache: cache}
 }
 
+func (s *Service) GetDocker() ContainerRuntime {
+	return s.docker
+}
+
 func (s *Service) StartSession(userID string) {
 	fmt.Println("starting session")
 	fmt.Println("create and start container")
@@ -32,9 +36,5 @@ func (s *Service) StartSession(userID string) {
 		fmt.Println("error while set key in redis")
 	}
 
-	go func() {
-		fmt.Println("container stopped")
-	}()
-
-	s.docker.Attach(ctx, containerID)
+	fmt.Printf("Container %s created and started for userID %s\n", containerID, userID)
 }

@@ -13,6 +13,18 @@ import (
 	"github.com/moby/moby/client"
 )
 
+type readerWrapper struct {
+	io.Reader
+	closer func() error
+}
+
+func (r readerWrapper) Close() error {
+	if r.closer != nil {
+		return r.closer()
+	}
+	return nil
+}
+
 type Service struct {
 	client *client.Client
 }
@@ -65,6 +77,26 @@ func (s *Service) Attach(ctx context.Context, containerID string) {
 
 	// input
 	io.Copy(conn.Conn, os.Stdin)
+}
+
+func (s *Service) AttachToContainer(ctx context.Context, containerID string) (io.ReadCloser, io.WriteCloser, error) {
+	conn, err := s.client.ContainerAttach(ctx, containerID, client.ContainerAttachOptions{
+		Stream: true,
+		Stdin:  true,
+		Stdout: true,
+		Stderr: true,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	reader := readerWrapper{
+		Reader: conn.Reader,
+		closer: func() error {
+			conn.Close()
+			return nil
+		},
+	}
+	return reader, conn.Conn, nil
 }
 
 func (s *Service) Stop(ctx context.Context, containerID string) {
